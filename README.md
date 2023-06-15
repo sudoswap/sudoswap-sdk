@@ -4,6 +4,11 @@ Uses the [sudoswap Defined API](https://docs.defined.fi/reference/sudoswap-quick
 
 ## Install
 
+Published on [npm](https://www.npmjs.com/package/sudo-defined-quoter).
+
+```
+npm i sudo-defined-quoter
+```
 
 
 ## Usage
