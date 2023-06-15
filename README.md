@@ -2,6 +2,8 @@
 
 Uses the [sudoswap Defined API](https://docs.defined.fi/reference/sudoswap-quickstart) to get bid/asks for any NFT.
 
+The Defined API free tier allows for 50k requests a month. The Quoter lib can also be easily forked to support additional data sources (e.g. The Graph, direct on-chain values, etc.)
+
 ## Install
 
 Published on [npm](https://www.npmjs.com/package/sudo-defined-quoter).
@@ -55,18 +57,7 @@ let p = await q.getAskQuotes('0xd3d9ddd0cf0a5f0bfb8f7fceae075df687eaebab');
   },
   {
     pool: {
-      address: '0x7a0145ae742ab1c1d5118d6afca5e4e3b120847e',
-      tokenBalance: 3018122539957195878n,
-      spotPrice: 579647633108523322n,
-      delta: 1045000000000000000n,
-      royalty: 0n,
-      nftIds: [Set],
-      nftBalance: 55n,
-      fee: 20000000000000000n,
-      bondingCurveAddress: '0xfa056c602ad0c0c4ee4385b3233f2cb06730334a',
-      isETHPool: true,
-      tokenAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-      poolType: 1
+      ...
     },
     quote: 565156442280810239n
   }

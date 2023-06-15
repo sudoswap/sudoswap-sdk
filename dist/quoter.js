@@ -244,7 +244,7 @@ class Quoter {
                 }
             }
             // Return sorted quotes per pool
-            return quotes.sort((a, b) => a.quote < b.quote ? -1 : a.quote > b.quote ? 1 : 0);
+            return quotes.sort((b, a) => a.quote < b.quote ? -1 : a.quote > b.quote ? 1 : 0);
         });
     }
 }
