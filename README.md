@@ -15,7 +15,9 @@ npm i sudo-defined-quoter
 
 ## Usage
 
-Create an instance of `Quoter` with your Defined API key. 
+Create an instance of `Quoter` with your Defined API key.
+
+Supports both Mainnet (by default), or Goerli (pass in a value of 5 to the Quoter constructor).
 
 Quoter supports getting instant asks (i.e. prices to buy at) and instant bids (i.e. prices to sell at) for any NFT collection listed on sudoswap v2.
 
@@ -33,7 +35,7 @@ Simple use case of getting the immediate pools/prices to sell a Remilio NFT:
 
 ```
 import { Quoter } from "sudo-defined-quoter";
-let q = new Quoter(DEFINED_API_KEY);
+let q = new Quoter(DEFINED_API_KEY, chainID /* 1 or 5, optional, defaults to 1 for Mainnet */);
 let p = await q.getAskQuotes('0xd3d9ddd0cf0a5f0bfb8f7fceae075df687eaebab');
 
 /*

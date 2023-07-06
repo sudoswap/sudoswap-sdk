@@ -42,12 +42,21 @@ class Quoter {
     }
   }`;
         this.PROTOCOL_FEE_MULTIPLIER = 5000000000000000;
-        this.EXPONENTIAL_CURVE = "0xfa056C602aD0C0C4EE4385b3233f2Cb06730334a";
-        this.LINEAR_CURVE = "0xe5d78fec1a7f42d2F3620238C498F088A866FdC5";
-        this.XYK_CURVE = "0xc7fB91B6cd3C67E02EC08013CEBb29b1241f3De5";
+        this.EXPONENTIAL_CURVE = {
+            1: "0xfa056C602aD0C0C4EE4385b3233f2Cb06730334a",
+            5: "0x60C3aeEb3b8fade6dF3DFdC52A4630D492cDD7e7"
+        };
+        this.LINEAR_CURVE = {
+            1: "0xe5d78fec1a7f42d2F3620238C498F088A866FdC5",
+            5: "0x9fe1E403c043214017a6719c1b64190c634229eF"
+        };
+        this.XYK_CURVE = {
+            1: "0xc7fB91B6cd3C67E02EC08013CEBb29b1241f3De5",
+            5: "0x8F03234E08A0068572d3AfE10c45d4840d3f29e8"
+        };
         this.EXCHANGE_ADDRESS = {
             1: "0xa020d57ab0448ef74115c112d18a9c231cc86000",
-            5: "0x967544b2dd5c1c7a459e810c9b60ae4fc8227201"
+            5: "0x967544b2dd5c1c7a459e810c9b60ae4fc8227201",
         };
         this.apiKey = apiKey;
         this.chainID = chainID;
@@ -67,12 +76,12 @@ class Quoter {
             tokenAddress: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
             poolType: PoolType.TRADE,
         };
-        let royalty = BigInt(0);
+        let royaltyNumber = 0;
         if (r["royalties"]) {
             for (const royaltyPercent of r["royalties"]) {
-                royalty = royalty + BigInt(royaltyPercent["percent"]);
+                royaltyNumber = royaltyNumber + parseFloat(royaltyPercent["percent"]);
             }
-            royalty = royalty * BigInt(Math.pow(10, 16));
+            let royalty = BigInt(royaltyNumber * Math.pow(10, 16));
             p.royalty = royalty;
         }
         if (r["nftAssets"]) {
@@ -126,9 +135,9 @@ class Quoter {
                 let hasTokens = x.tokenBalance > 0;
                 let hasNFTs = x.nftBalance > 0;
                 let isKnownCurve = x.bondingCurveAddress.toLowerCase() ===
-                    this.EXPONENTIAL_CURVE.toLowerCase() ||
-                    x.bondingCurveAddress.toLowerCase() === this.XYK_CURVE.toLowerCase() ||
-                    x.bondingCurveAddress.toLowerCase() === this.LINEAR_CURVE.toLowerCase();
+                    this.EXPONENTIAL_CURVE[this.chainID].toLowerCase() ||
+                    x.bondingCurveAddress.toLowerCase() === this.XYK_CURVE[this.chainID].toLowerCase() ||
+                    x.bondingCurveAddress.toLowerCase() === this.LINEAR_CURVE[this.chainID].toLowerCase();
                 return (hasNFTs || hasTokens) && isKnownCurve;
             });
             return pools;
@@ -136,14 +145,14 @@ class Quoter {
     }
     getPriceToBuyFromPool(p) {
         let price = undefined;
-        if (p.bondingCurveAddress.toLowerCase() === this.LINEAR_CURVE.toLowerCase()) {
+        if (p.bondingCurveAddress.toLowerCase() === this.LINEAR_CURVE[this.chainID].toLowerCase()) {
             price = p.spotPrice + p.delta;
         }
         else if (p.bondingCurveAddress.toLowerCase() ===
-            this.EXPONENTIAL_CURVE.toLowerCase()) {
+            this.EXPONENTIAL_CURVE[this.chainID].toLowerCase()) {
             price = (p.spotPrice * p.delta) / BigInt(Math.pow(10, 18));
         }
-        else if (p.bondingCurveAddress.toLowerCase() === this.XYK_CURVE.toLowerCase()) {
+        else if (p.bondingCurveAddress.toLowerCase() === this.XYK_CURVE[this.chainID].toLowerCase()) {
             let virtualNFTBalance = p.delta;
             let virtualTokenBalance = p.spotPrice;
             const k = virtualNFTBalance * virtualTokenBalance;
@@ -160,14 +169,14 @@ class Quoter {
     }
     getPriceToSellToPool(p) {
         let price = undefined;
-        if (p.bondingCurveAddress.toLowerCase() === this.LINEAR_CURVE.toLowerCase()) {
+        if (p.bondingCurveAddress.toLowerCase() === this.LINEAR_CURVE[this.chainID].toLowerCase()) {
             price = p.spotPrice;
         }
         else if (p.bondingCurveAddress.toLowerCase() ===
-            this.EXPONENTIAL_CURVE.toLowerCase()) {
+            this.EXPONENTIAL_CURVE[this.chainID].toLowerCase()) {
             price = p.spotPrice;
         }
-        else if (p.bondingCurveAddress.toLowerCase() === this.XYK_CURVE.toLowerCase()) {
+        else if (p.bondingCurveAddress.toLowerCase() === this.XYK_CURVE[this.chainID].toLowerCase()) {
             let virtualNFTBalance = p.delta;
             let virtualTokenBalance = p.spotPrice;
             const k = virtualNFTBalance * virtualTokenBalance;
@@ -181,14 +190,14 @@ class Quoter {
             const amountToCalculateRoyaltiesFrom = price - poolAndProtocolFeeAmount;
             let royaltyFee = p.royalty;
             const royaltyAmount = (amountToCalculateRoyaltiesFrom * royaltyFee) / BigInt(Math.pow(10, 18));
-            const outputAmountMinusTradeFee = price - (price * poolFee / BigInt(Math.pow(10, 18)));
+            const outputAmountMinusTradeFee = price - (price * poolFee) / BigInt(Math.pow(10, 18));
             return {
                 outputAmountMinusTradeFee: outputAmountMinusTradeFee,
-                amountReceived: price - royaltyAmount - poolAndProtocolFeeAmount
+                amountReceived: price - royaltyAmount - poolAndProtocolFeeAmount,
             };
         }
     }
-    getBidQuotes(address, id = undefined, quoteTokenAddress = undefined) {
+    getAskQuotes(address, id = undefined, quoteTokenAddress = undefined) {
         return __awaiter(this, void 0, void 0, function* () {
             let pools = yield this.getPoolsForCollection(address);
             // Filter for ETH by default
@@ -220,7 +229,7 @@ class Quoter {
             return quotes.sort((a, b) => a.quote < b.quote ? -1 : a.quote > b.quote ? 1 : 0);
         });
     }
-    getAskQuotes(address, id = undefined, quoteTokenAddress = undefined) {
+    getBidQuotes(address, id = undefined, quoteTokenAddress = undefined) {
         return __awaiter(this, void 0, void 0, function* () {
             let pools = yield this.getPoolsForCollection(address);
             // Filter for ETH by default

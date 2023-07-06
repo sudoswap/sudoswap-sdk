@@ -27,9 +27,18 @@ export declare class Quoter {
     apiKey: string;
     chainID: 1 | 5;
     PROTOCOL_FEE_MULTIPLIER: number;
-    EXPONENTIAL_CURVE: string;
-    LINEAR_CURVE: string;
-    XYK_CURVE: string;
+    EXPONENTIAL_CURVE: {
+        1: string;
+        5: string;
+    };
+    LINEAR_CURVE: {
+        1: string;
+        5: string;
+    };
+    XYK_CURVE: {
+        1: string;
+        5: string;
+    };
     EXCHANGE_ADDRESS: {
         1: string;
         5: string;
@@ -39,6 +48,6 @@ export declare class Quoter {
     getPoolsForCollection(address: string): Promise<Pool[]>;
     private getPriceToBuyFromPool;
     private getPriceToSellToPool;
-    getBidQuotes(address: string, id?: string | undefined, quoteTokenAddress?: string | undefined): Promise<PoolQuote[]>;
     getAskQuotes(address: string, id?: string | undefined, quoteTokenAddress?: string | undefined): Promise<PoolQuote[]>;
+    getBidQuotes(address: string, id?: string | undefined, quoteTokenAddress?: string | undefined): Promise<PoolQuote[]>;
 }

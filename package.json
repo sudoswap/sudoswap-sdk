@@ -1,6 +1,6 @@
 {
   "name": "sudo-defined-quoter",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "Get bids or asks for any NFT collection on sudoswap. Powered by the defined API.",
   "main": "dist/quoter.js",
   "types": "dist/quoter.d.ts",
