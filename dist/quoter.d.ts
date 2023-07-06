@@ -25,11 +25,16 @@ export interface PoolQuote {
 export declare class Quoter {
     getPoolQuery: string;
     apiKey: string;
+    chainID: 1 | 5;
     PROTOCOL_FEE_MULTIPLIER: number;
     EXPONENTIAL_CURVE: string;
     LINEAR_CURVE: string;
     XYK_CURVE: string;
-    constructor(apiKey: string);
+    EXCHANGE_ADDRESS: {
+        1: string;
+        5: string;
+    };
+    constructor(apiKey: string, chainID?: 1 | 5);
     private parseDefinedResponseToPool;
     getPoolsForCollection(address: string): Promise<Pool[]>;
     private getPriceToBuyFromPool;

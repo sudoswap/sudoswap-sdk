@@ -51,13 +51,21 @@ export class Quoter {
   }`;
 
   apiKey: string;
+  chainID: 1 | 5;
+
   PROTOCOL_FEE_MULTIPLIER = 5000000000000000;
   EXPONENTIAL_CURVE = "0xfa056C602aD0C0C4EE4385b3233f2Cb06730334a";
   LINEAR_CURVE = "0xe5d78fec1a7f42d2F3620238C498F088A866FdC5";
   XYK_CURVE = "0xc7fB91B6cd3C67E02EC08013CEBb29b1241f3De5";
 
-  constructor(apiKey: string) {
+  EXCHANGE_ADDRESS = {
+    1: "0xa020d57ab0448ef74115c112d18a9c231cc86000",
+    5: "0x967544b2dd5c1c7a459e810c9b60ae4fc8227201"
+  };
+
+  constructor(apiKey: string, chainID: 1 | 5 = 1) {
     this.apiKey = apiKey;
+    this.chainID = chainID;
   }
 
   private parseDefinedResponseToPool(r: any): Pool {
@@ -116,7 +124,7 @@ export class Quoter {
         query: `{
           getNftPoolsByCollectionAndExchange(
             collectionAddress: "${address}",
-            exchangeAddress: "0xa020d57ab0448ef74115c112d18a9c231cc86000"
+            exchangeAddress: "${this.EXCHANGE_ADDRESS[this.chainID]}"
             networkId: 1,
             limit: 500) {
               ${this.getPoolQuery}

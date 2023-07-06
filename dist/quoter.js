@@ -17,7 +17,7 @@ var PoolType;
     PoolType[PoolType["TOKEN"] = 2] = "TOKEN";
 })(PoolType || (exports.PoolType = PoolType = {}));
 class Quoter {
-    constructor(apiKey) {
+    constructor(apiKey, chainID = 1) {
         this.getPoolQuery = `items {
     acceptedNftTokenIds
     balanceNBT
@@ -45,7 +45,12 @@ class Quoter {
         this.EXPONENTIAL_CURVE = "0xfa056C602aD0C0C4EE4385b3233f2Cb06730334a";
         this.LINEAR_CURVE = "0xe5d78fec1a7f42d2F3620238C498F088A866FdC5";
         this.XYK_CURVE = "0xc7fB91B6cd3C67E02EC08013CEBb29b1241f3De5";
+        this.EXCHANGE_ADDRESS = {
+            1: "0xa020d57ab0448ef74115c112d18a9c231cc86000",
+            5: "0x967544b2dd5c1c7a459e810c9b60ae4fc8227201"
+        };
         this.apiKey = apiKey;
+        this.chainID = chainID;
     }
     parseDefinedResponseToPool(r) {
         let p = {
@@ -101,7 +106,7 @@ class Quoter {
                     query: `{
           getNftPoolsByCollectionAndExchange(
             collectionAddress: "${address}",
-            exchangeAddress: "0xa020d57ab0448ef74115c112d18a9c231cc86000"
+            exchangeAddress: "${this.EXCHANGE_ADDRESS[this.chainID]}"
             networkId: 1,
             limit: 500) {
               ${this.getPoolQuery}
