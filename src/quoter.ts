@@ -454,7 +454,7 @@ export class Quoter {
         zoneHash: this.ZERO_BYTES,
         salt: BigInt(0),
         conduitKey: this.ZERO_BYTES,
-        totalOriginalConsiderationItems: BigInt(sudockArgs[0].length + sudockArgs[1].length),
+        totalOriginalConsiderationItems: BigInt(sudockArgs[1].length),
       },
       numerator: BigInt(1),
       denominator: BigInt(1),
