@@ -5,8 +5,9 @@
     "declaration": true,
     "outDir": "./dist",
     "strict": true,
-    "lib": ["es2020", "dom"]
+    "lib": ["es2020", "dom"],
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*"]
+  "exclude": ["node_modules", "**/__tests__/*"],
 }

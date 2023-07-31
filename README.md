@@ -1,8 +1,8 @@
-# sudo quoter
+# sudoswap SDK
 
 Uses the [sudoswap Defined API](https://docs.defined.fi/reference/sudoswap-quickstart) to get bid/asks for any NFT.
 
-The Defined API free tier allows for 50k requests a month. The Quoter lib can also be easily forked to support additional data sources (e.g. The Graph, direct on-chain values, etc.)
+The Defined API free tier allows for 50k requests a month. The lib can also be easily forked to support additional data sources (e.g. The Graph, direct on-chain values, etc.)
 
 ## Install
 
