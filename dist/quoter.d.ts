@@ -785,6 +785,10 @@ export declare class Quoter {
         1: string;
         5: string;
     };
+    GDA_CURVE: {
+        1: string;
+        5: string;
+    };
     EXCHANGE_ADDRESS: {
         1: string;
         5: string;
@@ -794,6 +798,7 @@ export declare class Quoter {
     ZERO_PREFIX: `0x${string}`;
     ZERO_ADDRESS: `0x${string}`;
     ZERO_BYTES: `0x${string}`;
+    HALF_PRECISION: number;
     constructor(apiKey: string, chainID?: 1 | 5);
     private parseDefinedResponseToPool;
     getPoolsForCollection(address: string): Promise<Pool[]>;
@@ -817,4 +822,8 @@ export declare class Quoter {
         value: bigint;
         data: `0x${string}`;
     }>;
+    calulateGDA(dailyGDAScalar: number, itemScalar: number, startPrice: bigint, poolType: PoolType.NFT | PoolType.TOKEN, startTimeSeconds: bigint | undefined): {
+        spotPrice: bigint;
+        delta: bigint;
+    };
 }

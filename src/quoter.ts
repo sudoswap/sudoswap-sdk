@@ -85,7 +85,10 @@ export class Quoter {
     1: "0xc7fB91B6cd3C67E02EC08013CEBb29b1241f3De5",
     5: "0x8F03234E08A0068572d3AfE10c45d4840d3f29e8",
   };
-
+  GDA_CURVE = {
+    1: "0x1fD5876d4A3860Eb0159055a3b7Cb79fdFFf6B67",
+    5: "0x5e9a0Ef66A6BC2E6Ac7C9811374521f7BAd89e53",
+  };
   EXCHANGE_ADDRESS = {
     1: "0xa020d57ab0448ef74115c112d18a9c231cc86000",
     5: "0x967544b2dd5c1c7a459e810c9b60ae4fc8227201",
@@ -96,6 +99,7 @@ export class Quoter {
   ZERO_PREFIX: `0x${string}` = "0x000000000000000000000000";
   ZERO_ADDRESS: `0x${string}` = "0x0000000000000000000000000000000000000000";
   ZERO_BYTES: `0x${string}` = "0x0000000000000000000000000000000000000000000000000000000000000000";
+  HALF_PRECISION = 1e9;
 
   constructor(apiKey: string, chainID: 1 | 5 = 1) {
     this.apiKey = apiKey;
@@ -215,6 +219,28 @@ export class Quoter {
       const k = virtualNFTBalance * virtualTokenBalance;
       const newVirtualTokenBalance = k / (virtualNFTBalance - BigInt(1));
       price = newVirtualTokenBalance - virtualTokenBalance;
+    }  else if (
+      p.bondingCurveAddress.toLowerCase() ===
+      this.GDA_CURVE[this.chainID].toLowerCase()
+    ) {
+      let fullDeltaBinary = p.delta.toString(2);
+      if (fullDeltaBinary.length < 128) {
+        fullDeltaBinary =
+          '0'.repeat(128 - fullDeltaBinary.length) + fullDeltaBinary;
+      }
+      const delta = BigInt('0b' + fullDeltaBinary.slice(0, 40))
+      const lambda = BigInt('0b' + fullDeltaBinary.slice(40, 80))
+      const lastTime = BigInt(parseInt(fullDeltaBinary.slice(80), 2));
+      const currentTime = BigInt(Math.round(Date.now() / 1000));
+      const timeElapsed = currentTime - lastTime;
+
+      let fullLambda = Number(lambda * timeElapsed) / this.HALF_PRECISION;
+      if (fullLambda > 20) {
+        fullLambda = 20;
+      }
+
+      const scaleFactor = Math.pow(2, fullLambda);
+      price = BigInt(Number(p.spotPrice) / scaleFactor);
     }
     if (price) {
       const poolFee = p.fee;
@@ -247,6 +273,31 @@ export class Quoter {
       const k = virtualNFTBalance * virtualTokenBalance;
       const newVirtualTokenBalance = k / (virtualNFTBalance + BigInt(1));
       price = virtualTokenBalance - newVirtualTokenBalance;
+    }
+    else if (
+      p.bondingCurveAddress.toLowerCase() ===
+      this.GDA_CURVE[this.chainID].toLowerCase()
+    ) {
+      let fullDeltaBinary = p.delta.toString(2);
+      if (fullDeltaBinary.length < 128) {
+        fullDeltaBinary =
+          '0'.repeat(128 - fullDeltaBinary.length) + fullDeltaBinary;
+      }
+      const delta = BigInt('0b' + fullDeltaBinary.slice(0, 40))
+      const lambda = BigInt('0b' + fullDeltaBinary.slice(40, 80))
+      const lastTime = BigInt(parseInt(fullDeltaBinary.slice(80), 2));
+      const currentTime = BigInt(Math.round(Date.now() / 1000));
+      const timeElapsed = currentTime - lastTime;
+
+      let fullLambda = Number(lambda * timeElapsed) / this.HALF_PRECISION;
+      if (fullLambda > 20) {
+        fullLambda = 20;
+      }
+
+      const scaleFactor = Math.pow(2, fullLambda);
+
+      // Scale down by delta for 1 tick
+      price = BigInt(Number(p.spotPrice) * scaleFactor) / (delta * BigInt(this.HALF_PRECISION));
     }
     if (price) {
       const poolFee = p.fee;
@@ -474,6 +525,57 @@ export class Quoter {
     return {
       value: sudockArgs[1].map((x) => x.amount).reduce((x, y) => x + y, BigInt(0)),
       data: data
+    }
+  }
+
+  calulateGDA(dailyGDAScalar: number, itemScalar: number, startPrice: bigint, poolType: PoolType.NFT | PoolType.TOKEN, startTimeSeconds: bigint | undefined) {
+    if (!startTimeSeconds) {
+      startTimeSeconds = BigInt(Math.floor(Date.now() / 1000));
+    }
+    const alpha = BigInt(itemScalar * 1e9);
+    let alpha40bits = alpha.toString(2);
+    if (alpha40bits.length < 40) {
+      const zeroPrefix = '0'.repeat(40 - alpha40bits.length);
+      alpha40bits = zeroPrefix + alpha40bits;
+    }
+
+    const deltaFromPercentToUnit = dailyGDAScalar;
+    const DAY_DIVIDER = 1 / 84600;
+
+    // Fill in magic numbers
+    let lambda: number;
+    if (dailyGDAScalar === 2) {
+      lambda = 11574;
+    }
+    else if (dailyGDAScalar === 1.5) {
+      lambda = 6770;
+    }
+    else if (dailyGDAScalar === 4/3 || dailyGDAScalar === 1.33) {
+      lambda = 4802;
+    }
+    else {
+      lambda = Math.log2(deltaFromPercentToUnit) * this.HALF_PRECISION * DAY_DIVIDER;
+    }
+
+    let lambda40bits = lambda.toString(2);
+    if (lambda40bits.length < 40) {
+      const zeroPrefix = '0'.repeat(40 - lambda40bits.length);
+      lambda40bits = zeroPrefix + lambda40bits;
+    }
+    const timestampSeconds = BigInt(startTimeSeconds);
+    let time48bits = timestampSeconds.toString(2);
+    if (time48bits.length < 48) {
+      const zeroPrefix = '0'.repeat(48 - time48bits.length);
+      time48bits = zeroPrefix + time48bits;
+    }
+    const fullDelta = BigInt('0b' + alpha40bits + lambda40bits + time48bits);
+
+    if (poolType === PoolType.TOKEN) {
+      startPrice = startPrice / BigInt(itemScalar * Number(this.HALF_PRECISION));
+    }
+    return {
+      spotPrice: startPrice,
+      delta: fullDelta
     }
   }
 }
