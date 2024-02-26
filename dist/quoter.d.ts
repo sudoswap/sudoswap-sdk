@@ -775,22 +775,27 @@ export declare class Quoter {
     PROTOCOL_FEE_MULTIPLIER: number;
     EXPONENTIAL_CURVE: {
         1: string;
+        42161: string;
         5: string;
     };
     LINEAR_CURVE: {
         1: string;
+        42161: string;
         5: string;
     };
     XYK_CURVE: {
         1: string;
+        42161: string;
         5: string;
     };
     GDA_CURVE: {
         1: string;
+        42161: string;
         5: string;
     };
     EXCHANGE_ADDRESS: {
         1: string;
+        42161: string;
         5: string;
     };
     SUDOCK_ADDRESS: `0x${string}`;
