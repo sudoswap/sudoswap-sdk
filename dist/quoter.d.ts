@@ -771,32 +771,37 @@ export interface PoolQuote {
 export declare class Quoter {
     getPoolQuery: string;
     apiKey: string;
-    chainID: 1 | 5;
+    chainID: 1 | 5 | 8453 | 42161;
     PROTOCOL_FEE_MULTIPLIER: number;
     EXPONENTIAL_CURVE: {
         1: string;
         42161: string;
         5: string;
+        8453: string;
     };
     LINEAR_CURVE: {
         1: string;
         42161: string;
         5: string;
+        8453: string;
     };
     XYK_CURVE: {
         1: string;
         42161: string;
         5: string;
+        8453: string;
     };
     GDA_CURVE: {
         1: string;
         42161: string;
         5: string;
+        8453: string;
     };
     EXCHANGE_ADDRESS: {
         1: string;
         42161: string;
         5: string;
+        8453: string;
     };
     SUDOCK_ADDRESS: `0x${string}`;
     SEAPORT_ADDRESS: `0x${string}`;
@@ -805,6 +810,7 @@ export declare class Quoter {
     ZERO_BYTES: `0x${string}`;
     HALF_PRECISION: number;
     constructor(apiKey: string, chainID?: 1 | 5);
+    private scientificToBigInt;
     private parseDefinedResponseToPool;
     getPoolsForCollection(address: string): Promise<Pool[]>;
     private getPriceToBuyFromPool;

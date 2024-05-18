@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quoter = exports.PoolType = exports.publicClient = void 0;
 const viem_1 = require("viem");
 const chains_1 = require("viem/chains");
+const axios_1 = require("axios");
 const sudock_abi_1 = require("./sudock.abi");
 const seaport_abi_1 = require("./seaport.abi");
 exports.publicClient = (0, viem_1.createPublicClient)({
@@ -55,26 +56,31 @@ class Quoter {
             1: "0xfa056C602aD0C0C4EE4385b3233f2Cb06730334a",
             42161: "0x0A25f1711F709Cdc603f5cbc2B5a5c76EcC26a3c",
             5: "0x60C3aeEb3b8fade6dF3DFdC52A4630D492cDD7e7",
+            8453: "0x9506C0E5CEe9AD1dEe65B3539268D61CCB25aFB6",
         };
         this.LINEAR_CURVE = {
             1: "0xe5d78fec1a7f42d2F3620238C498F088A866FdC5",
             42161: "0x93029Eb6B57289B3EbEe3fB359d8070f42804a06",
             5: "0x9fe1E403c043214017a6719c1b64190c634229eF",
+            8453: "0xe41352CB8D9af18231E05520751840559C2a548A",
         };
         this.XYK_CURVE = {
             1: "0xc7fB91B6cd3C67E02EC08013CEBb29b1241f3De5",
             42161: "0x31F85DDAB4b77a553D2D4aF38bbA3e3CB7E425c9",
             5: "0x8F03234E08A0068572d3AfE10c45d4840d3f29e8",
+            8453: "0xd0A2f4ae5E816ec09374c67F6532063B60dE037B",
         };
         this.GDA_CURVE = {
             1: "0x1fD5876d4A3860Eb0159055a3b7Cb79fdFFf6B67",
             42161: "0x84e18157B9ec715FdD114a5B9f17D0b790363C27",
             5: "0x5e9a0Ef66A6BC2E6Ac7C9811374521f7BAd89e53",
+            8453: "0x4f1627be4C72aEB9565D4c751550C4D262a96B51",
         };
         this.EXCHANGE_ADDRESS = {
             1: "0xa020d57ab0448ef74115c112d18a9c231cc86000",
             42161: "0x4f1627be4C72aEB9565D4c751550C4D262a96B51",
             5: "0x967544b2dd5c1c7a459e810c9b60ae4fc8227201",
+            8453: "0x605145d263482684590f630e9e581b21e4938eb8",
         };
         this.SUDOCK_ADDRESS = "0x5be35b691f8275556b05ddf578E491a63C214889";
         this.SEAPORT_ADDRESS = "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC";
@@ -85,12 +91,29 @@ class Quoter {
         this.apiKey = apiKey;
         this.chainID = chainID;
     }
+    scientificToBigInt(valueToDecode) {
+        if (!valueToDecode.includes("e+")) {
+            return BigInt(valueToDecode);
+        }
+        else {
+            // Split the string into coefficient and exponent parts
+            let [coefficient, exponent] = valueToDecode.toLowerCase().split("e");
+            // Parse the coefficient and exponent
+            let coeffBigInt = BigInt(coefficient.replace(".", ""));
+            let exponentValue = parseInt(exponent);
+            // Append zeros to the coefficient according to the exponent
+            for (let i = 0; i < exponentValue; i++) {
+                coeffBigInt *= BigInt(10);
+            }
+            return coeffBigInt;
+        }
+    }
     parseDefinedResponseToPool(r) {
         let p = {
             address: r["poolAddress"],
             tokenBalance: BigInt(r["balanceNBT"]),
-            spotPrice: BigInt(r["spotPriceT"]),
-            delta: BigInt(r["delta"]),
+            spotPrice: this.scientificToBigInt(r["spotPriceT"]).valueOf(),
+            delta: this.scientificToBigInt(r["delta"]).valueOf(),
             royalty: BigInt(0),
             nftIds: new Set(),
             nftBalance: BigInt(r["nftBalanceV2"]),
@@ -135,10 +158,8 @@ class Quoter {
     }
     getPoolsForCollection(address) {
         return __awaiter(this, void 0, void 0, function* () {
-            let r = yield fetch("https://api.defined.fi", {
-                method: "POST",
-                body: JSON.stringify({
-                    query: `{
+            let response = yield axios_1.default.post("https://graph.defined.fi/graphql", {
+                query: `{
           getNftPoolsByCollectionAndExchange(
             collectionAddress: "${address}",
             exchangeAddress: "${this.EXCHANGE_ADDRESS[this.chainID]}"
@@ -147,14 +168,14 @@ class Quoter {
               ${this.getPoolQuery}
             }
         }`,
-                }),
+            }, {
                 headers: {
-                    "x-api-key": this.apiKey,
+                    "Content-Type": "application/json",
+                    Authorization: this.apiKey,
                 },
             });
-            let response = yield r.json();
             let pools = [];
-            for (let r of response["data"]["getNftPoolsByCollectionAndExchange"]["items"]) {
+            for (let r of response["data"]["data"]["getNftPoolsByCollectionAndExchange"]["items"]) {
                 pools.push(this.parseDefinedResponseToPool(r));
             }
             pools = pools.filter((x) => {
@@ -194,10 +215,10 @@ class Quoter {
             let fullDeltaBinary = p.delta.toString(2);
             if (fullDeltaBinary.length < 128) {
                 fullDeltaBinary =
-                    '0'.repeat(128 - fullDeltaBinary.length) + fullDeltaBinary;
+                    "0".repeat(128 - fullDeltaBinary.length) + fullDeltaBinary;
             }
-            const delta = BigInt('0b' + fullDeltaBinary.slice(0, 40));
-            const lambda = BigInt('0b' + fullDeltaBinary.slice(40, 80));
+            const delta = BigInt("0b" + fullDeltaBinary.slice(0, 40));
+            const lambda = BigInt("0b" + fullDeltaBinary.slice(40, 80));
             const lastTime = BigInt(parseInt(fullDeltaBinary.slice(80), 2));
             const currentTime = BigInt(Math.round(Date.now() / 1000));
             const timeElapsed = currentTime - lastTime;
@@ -239,10 +260,10 @@ class Quoter {
             let fullDeltaBinary = p.delta.toString(2);
             if (fullDeltaBinary.length < 128) {
                 fullDeltaBinary =
-                    '0'.repeat(128 - fullDeltaBinary.length) + fullDeltaBinary;
+                    "0".repeat(128 - fullDeltaBinary.length) + fullDeltaBinary;
             }
-            const delta = BigInt('0b' + fullDeltaBinary.slice(0, 40));
-            const lambda = BigInt('0b' + fullDeltaBinary.slice(40, 80));
+            const delta = BigInt("0b" + fullDeltaBinary.slice(0, 40));
+            const lambda = BigInt("0b" + fullDeltaBinary.slice(40, 80));
             const lastTime = BigInt(parseInt(fullDeltaBinary.slice(80), 2));
             const currentTime = BigInt(Math.round(Date.now() / 1000));
             const timeElapsed = currentTime - lastTime;
@@ -252,7 +273,9 @@ class Quoter {
             }
             const scaleFactor = Math.pow(2, fullLambda);
             // Scale down by delta for 1 tick
-            price = BigInt(Number(p.spotPrice) * scaleFactor) / (delta * BigInt(this.HALF_PRECISION));
+            price =
+                BigInt(Number(p.spotPrice) * scaleFactor) /
+                    (delta * BigInt(this.HALF_PRECISION));
         }
         if (price) {
             const poolFee = p.fee;
@@ -395,21 +418,20 @@ class Quoter {
                 numerator: BigInt(1),
                 denominator: BigInt(1),
                 signature: this.ZERO_BYTES,
-                extraData: (0, viem_1.encodeAbiParameters)((0, viem_1.parseAbiParameters)("address a"), [poolAddress])
+                extraData: (0, viem_1.encodeAbiParameters)((0, viem_1.parseAbiParameters)("address a"), [
+                    poolAddress,
+                ]),
             };
             const data = (0, viem_1.encodeFunctionData)({
                 abi: seaport_abi_1.seaportABI,
-                functionName: 'fulfillAdvancedOrder',
-                args: [
-                    advancedOrder,
-                    [],
-                    this.ZERO_BYTES,
-                    this.ZERO_ADDRESS
-                ]
+                functionName: "fulfillAdvancedOrder",
+                args: [advancedOrder, [], this.ZERO_BYTES, this.ZERO_ADDRESS],
             });
             return {
-                value: sudockArgs[1].map((x) => x.amount).reduce((x, y) => x + y, BigInt(0)),
-                data: data
+                value: sudockArgs[1]
+                    .map((x) => x.amount)
+                    .reduce((x, y) => x + y, BigInt(0)),
+                data: data,
             };
         });
     }
@@ -420,7 +442,7 @@ class Quoter {
         const alpha = BigInt(itemScalar * 1e9);
         let alpha40bits = alpha.toString(2);
         if (alpha40bits.length < 40) {
-            const zeroPrefix = '0'.repeat(40 - alpha40bits.length);
+            const zeroPrefix = "0".repeat(40 - alpha40bits.length);
             alpha40bits = zeroPrefix + alpha40bits;
         }
         const deltaFromPercentToUnit = dailyGDAScalar;
@@ -437,26 +459,28 @@ class Quoter {
             lambda = 4802;
         }
         else {
-            lambda = Math.log2(deltaFromPercentToUnit) * this.HALF_PRECISION * DAY_DIVIDER;
+            lambda =
+                Math.log2(deltaFromPercentToUnit) * this.HALF_PRECISION * DAY_DIVIDER;
         }
         let lambda40bits = lambda.toString(2);
         if (lambda40bits.length < 40) {
-            const zeroPrefix = '0'.repeat(40 - lambda40bits.length);
+            const zeroPrefix = "0".repeat(40 - lambda40bits.length);
             lambda40bits = zeroPrefix + lambda40bits;
         }
         const timestampSeconds = BigInt(startTimeSeconds);
         let time48bits = timestampSeconds.toString(2);
         if (time48bits.length < 48) {
-            const zeroPrefix = '0'.repeat(48 - time48bits.length);
+            const zeroPrefix = "0".repeat(48 - time48bits.length);
             time48bits = zeroPrefix + time48bits;
         }
-        const fullDelta = BigInt('0b' + alpha40bits + lambda40bits + time48bits);
+        const fullDelta = BigInt("0b" + alpha40bits + lambda40bits + time48bits);
         if (poolType === PoolType.TOKEN) {
-            startPrice = startPrice / BigInt(itemScalar * Number(this.HALF_PRECISION));
+            startPrice =
+                startPrice / BigInt(itemScalar * Number(this.HALF_PRECISION));
         }
         return {
             spotPrice: startPrice,
-            delta: fullDelta
+            delta: fullDelta,
         };
     }
 }
