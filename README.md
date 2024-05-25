@@ -2,7 +2,7 @@
 
 Uses the [sudoswap Defined API](https://docs.defined.fi/reference/sudoswap-quickstart) to get bid/asks for any NFT.
 
-The Defined API free tier allows for 50k requests a month. The lib can also be easily forked to support additional data sources (e.g. The Graph, direct on-chain values, etc.)
+The Defined API free tier allows for 50k requests a month. The lib can also be forked to support additional data sources (e.g. The Graph, direct on-chain values, etc.)
 
 ## Install
 
@@ -15,9 +15,14 @@ npm i sudo-defined-quoter
 
 ## Usage
 
-Create an instance of `Quoter` with your Defined API key.
+Create an instance of `Quoter` with your Defined API key, and a chain ID.
 
-Supports both Mainnet (by default), or Goerli (pass in a value of 5 to the Quoter constructor).
+Supports the following chain IDs:
+- 1 (mainnet)
+- 5 (goerli)
+- 42161 (arbitrum)
+- 8453 (base)
+- 1996 (sanko)
 
 Quoter supports getting instant asks (i.e. prices to buy at) and instant bids (i.e. prices to sell at) for any NFT collection listed on sudoswap v2.
 
